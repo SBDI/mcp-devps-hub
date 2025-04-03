@@ -5,19 +5,63 @@ import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import SamplingMessage, CreateMessageRequestParams, CreateMessageResponse
 from mcp.server.fastmcp.prompts.base import AssistantMessage, Message, UserMessage
 from pydantic import Field
 
 from .clients import Clients, create_api_clients  # Corrected import path
+from .clients.groq_client import GroqClient
 from .config import settings
 from .utilities.logging import get_logger  # Use local logger setup
 from .utilities import MIN_COMMENT_RATIO, MAX_COMPLEXITY, SPRINT_DAYS
 
 logger = get_logger(__name__)
 logger.setLevel("DEBUG")  # Set logging level to DEBUG
+
+# --- Sampling Callback ---
+async def handle_sampling_message(
+    ctx: Any,
+    params: CreateMessageRequestParams,
+) -> CreateMessageResponse:
+    """Handle sampling requests from the MCP server.
+
+    This allows the server to request LLM completions through the client,
+    enabling more sophisticated AI-powered features.
+    """
+    logger.info(f"Sampling request received with {len(params.messages)} messages")
+
+    try:
+        # Use our Groq client to generate the completion
+        groq_client = GroqClient()
+
+        # Convert MCP messages to Groq format
+        groq_messages = []
+        for msg in params.messages:
+            if isinstance(msg, SamplingMessage):
+                groq_messages.append({
+                    "role": msg.role.value,
+                    "content": msg.content
+                })
+
+        # Generate completion with Groq
+        completion = await groq_client.generate_completion(
+            messages=groq_messages,
+            temperature=params.temperature or 0.7,
+            max_tokens=params.max_tokens or 1000
+        )
+
+        # Return the response
+        return CreateMessageResponse(content=completion)
+
+    except Exception as e:
+        logger.error(f"Error in sampling callback: {e}")
+        return CreateMessageResponse(
+            content=f"Error generating response: {e}",
+            finish_reason="error"
+        )
 
 # --- Lifespan Manager ---
 @asynccontextmanager
@@ -41,6 +85,7 @@ mcp = FastMCP(
     instructions="Provides tools, resources, and prompts for development lifecycle visibility.",
     dependencies=required_deps,
     lifespan=app_lifespan,
+    sampling_callback=handle_sampling_message
 )
 
 # --- Resources ---
@@ -312,6 +357,46 @@ async def analyze_code_with_groq(
         return f"Error analyzing code: {e!s}"
 
 # Add tools for notifications, AI estimation, doc generation
+
+@mcp.tool()
+async def generate_ai_insights(
+    context: Annotated[str, Field(description="Context information for the AI to analyze")],
+    question: Annotated[str, Field(description="Specific question or analysis request")],
+) -> str:
+    """Generate AI-powered insights using sampling.
+
+    This tool uses MCP sampling to generate insights based on the provided context and question.
+    The AI model will analyze the context and provide a detailed response to the question.
+    """
+    logger.info(f"Tool: Generating AI insights for question: {question}")
+
+    try:
+        # Create system message
+        system_message = SamplingMessage(
+            role="system",
+            content="You are an AI assistant specialized in software development and DevOps. "
+                    "Analyze the provided context and answer the question with detailed insights."
+        )
+
+        # Create user message with context and question
+        user_message = SamplingMessage(
+            role="user",
+            content=f"Context:\n{context}\n\nQuestion: {question}"
+        )
+
+        # Use MCP sampling to generate insights
+        # This will be handled by the sampling_callback we defined
+        response = await mcp.sample_from_llm(
+            messages=[system_message, user_message],
+            temperature=0.3,  # Lower temperature for more focused responses
+            max_tokens=1500   # Allow for detailed responses
+        )
+
+        return response.content
+
+    except Exception as e:
+        logger.error(f"Error generating AI insights: {e}")
+        return f"Error generating insights: {e}"
 
 # --- Prompts ---
 @mcp.prompt()

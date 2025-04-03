@@ -6,30 +6,70 @@ __pycache__/
 .venv/
 venv/
 ENV/
+pyenv.cfg
+pip-log.txt
+pip-delete-this-directory.txt
 
 # Distribution / packaging
 dist/
 build/
 *.egg-info/
+.eggs/
+wheels/
+*.whl
 
 # Unit test / coverage reports
 htmlcov/
 .tox/
+.nox/
 .coverage
 .coverage.*
 .cache
+nosetests.xml
 coverage.xml
 *.cover
+.hypothesis/
+.pytest_cache/
 
-# IDEs
+# IDEs and editors
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
 
 # Environment
 .env
 .env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
 
 # UV
 .uv/
+
+# MCP specific
+*.db
+*.sqlite
+*.sqlite3
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+.temp/
+tmp/

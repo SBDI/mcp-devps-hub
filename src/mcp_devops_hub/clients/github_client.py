@@ -23,9 +23,12 @@ class GitHubClient:
         try:
             # PyGithub is synchronous, wrap calls in asyncio.to_thread
             auth_token = settings.github_token.get_secret_value()
-            base_url = settings.github_base_url or NotSet # Use default if None
 
-            self._client = Github(login_or_token=auth_token, base_url=base_url)
+            # Handle base_url properly
+            if settings.github_base_url:
+                self._client = Github(login_or_token=auth_token, base_url=settings.github_base_url)
+            else:
+                self._client = Github(login_or_token=auth_token)
             # Test connection by getting the authenticated user
             user = self._client.get_user()
             logger.info(f"GitHub client initialized. Authenticated as: {user.login}")
