@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-devops-hub"
+version = "0.1.0"
+description = "MCP server for end-to-end development visibility (Jira, GitHub, CI/CD, etc.)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Your Name / Company", email = "your@email.com" }
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/mcp-devops-hub"
+
+[project.scripts]
+mcp-devops-hub = "mcp_devops_hub.server:run_server"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_devops_hub"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "N", "UP", "PL", "RUF"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+plugins = "pydantic.mypy"

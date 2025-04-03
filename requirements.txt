@@ -1,0 +1,11 @@
+mcp>=1.6.0
+fastmcp==0.4.1
+httpx>=0.27.0
+pydantic-settings>=2.0.0
+jira>=3.8.0
+PyGithub>=2.6.0
+slack_sdk>=3.35.0
+pymsteams>=0.2.5
+groq>=0.20.0
+
+
