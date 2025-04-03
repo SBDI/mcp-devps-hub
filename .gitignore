@@ -58,6 +58,10 @@ npm-debug.log*
 # UV
 .uv/
 
+# Documentation
+docs/
+doc/
+
 # MCP specific
 *.db
 *.sqlite
